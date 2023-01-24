@@ -46,6 +46,9 @@ list_services(Host) ->
     get(Endpoint).
 
 get_local_service(Name) ->
+    logger:set_application_level(consulate_client, debug),
+    logger:set_application_level(default, debug),
+    ?LOG_DEBUG("consulate:get_local_service(~p)", [Name]),
     Endpoint = io_lib:format("/v1/agent/service/~s", [Name]),
     get(Endpoint).
 
@@ -56,28 +59,28 @@ get_service(Name, Host) ->
     get(Endpoint).
 
 get(Endpoint) ->
-    URL = build_url(Endpoint),
-
-    ?LOG_DEBUG("consulate:get(~p) -> ~p", [Endpoint, URL]),
-
-    case httpc:request(get, {URL, []}, [], [{body_format, binary}]) of
-        {ok, {{_, 200, _}, _, Body}} ->
+    Url = build_url(Endpoint),
+    ?LOG_DEBUG("consulate:get(~p) -> ~p", [Endpoint, Url]),
+    case hackney:request(get, Url, [], [], []) of 
+        {ok, 200, _, ClientRef} ->
+            {ok, Body} = hackney:body(ClientRef),
             {ok, jsx:decode(Body, [return_maps])};
-        {ok, {200, Body}} ->
-            {ok, jsx:decode(Body, [return_maps])};
-        Resp -> {error, Resp}
+        {error, Reason} ->
+            {error, Reason}
     end.
 
 put(Endpoint, Message) ->
     Body = jsx:encode(Message),
-    URL = build_url(Endpoint),
+    Url = build_url(Endpoint),
 
-    ?LOG_DEBUG("consulate:put(~p, ~p) -> ~p @ ~p", [Endpoint, Message, URL, Body]),
+    ?LOG_DEBUG("consulate:put(~p, ~p) -> ~p @ ~p", [Endpoint, Message, Url, Body]),
 
-    case httpc:request(put, {URL, [], "application/json", Body}, [], []) of
-        {ok, {{_, 200, _}, _, _}} -> ok;
-        {ok, {200, _}} -> ok;
-        _ -> error
+    Headers = [{<<"Content-Type">>, <<"application/json">>}],
+    Payload = Body,
+    Options = [],
+    case hackney:request(put, Url, Headers, Payload, Options) of 
+        {ok, 200, _, _} -> ok;
+        {error, _Response} -> error
     end.
 
 build_url({Path, Query}) ->

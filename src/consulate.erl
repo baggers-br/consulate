@@ -21,8 +21,12 @@
          terminate/2]).
 
 start_link() ->
+    logger:set_application_level(consulate, debug),
+    logger:set_application_level(consulate_client, debug),
     ?LOG_DEBUG("consulate:start_link()"),
-    gen_server:start_link({local, consulate}, ?MODULE, [], []).
+    Wat = gen_server:start_link({local, consulate}, ?MODULE, [], []),
+    ?LOG_DEBUG("consulate:start_link() cool ~p", [Wat]),
+    Wat.
 
 register_node(Name, Port) ->
     ?LOG_DEBUG("consulate:register_node(~p, ~p)", [Name, Port]),
@@ -48,7 +52,7 @@ port_please(Name, Host, Timeout) ->
 
 listen_port_please(Name, Host) ->
     ?LOG_DEBUG("consulate:listen_port_please(~p, ~p)", [Name, Host]),
-    Port = case consulate_client:get_local(Name) of
+    Port = case consulate_client:get_local_service(Name) of
                {ok, #{<<"Port">> := P}} -> P;
                error -> erl_epmd:listen_port_please(Name, Host)
            end,
