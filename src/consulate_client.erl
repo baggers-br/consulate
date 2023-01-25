@@ -60,12 +60,37 @@ get_service(Name, Host) ->
 
 get(Endpoint) ->
     Url = build_url(Endpoint),
+    Headers = [],
+    Payload = <<>>,
+    Options = [],    
+
+    ?LOG_DEBUG("PRE_FUCK_ME"),
+    FuckMe = hackney:request(get, <<"http://consul:8500/v1/agent/service/ts_meta?">>, [], <<>>, []),
+    ?LOG_DEBUG("FUCK_ME RES=~p", [FuckMe]),
+
     ?LOG_DEBUG("consulate:get(~p) -> ~p", [Endpoint, Url]),
-    case hackney:request(get, Url, [], <<>>, []) of 
+
+    ?LOG_DEBUG("TITS: ~p", [{get, Url, Headers, Payload, Options}]),    
+
+    Res = hackney:request(get, Url, Headers, Payload, Options),
+
+    ?LOG_DEBUG("consulate:get RESULT: ~p", [Res]),
+
+    case Res of 
         {ok, 200, _, ClientRef} ->
+            ?LOG_DEBUG("GET do it got a body?"),
+
             {ok, Body} = hackney:body(ClientRef),
-            {ok, jsx:decode(Body, [return_maps])};
+
+            ?LOG_DEBUG("GET Body: ~p", [Body]),
+
+            Decoded = jsx:decode(Body, [return_maps]),
+
+            ?LOG_DEBUG("GET Decoded: ~p", [Decoded]),
+
+            {ok, Decoded};
         {error, Reason} ->
+            ?LOG_DEBUG("GET BALLS: ~p", [Reason]),
             {error, Reason}
     end.
 
