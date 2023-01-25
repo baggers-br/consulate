@@ -91,7 +91,7 @@ build_url({Path, Query}) ->
       scheme => application:get_env(consulate, scheme, "http"),
       query => uri_string:compose_query(Query)
      },
-    uri_string:recompose(URI);
+    erlang:list_to_binary(uri_string:recompose(URI));
 build_url(Path) ->
     build_url({Path, []}).
 
