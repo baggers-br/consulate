@@ -61,7 +61,7 @@ get_service(Name, Host) ->
 get(Endpoint) ->
     Url = build_url(Endpoint),
     ?LOG_DEBUG("consulate:get(~p) -> ~p", [Endpoint, Url]),
-    case hackney:request(get, Url, [], [], []) of 
+    case hackney:request(get, Url, [], <<>>, []) of 
         {ok, 200, _, ClientRef} ->
             {ok, Body} = hackney:body(ClientRef),
             {ok, jsx:decode(Body, [return_maps])};
