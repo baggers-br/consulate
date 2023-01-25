@@ -52,7 +52,12 @@ port_please(Name, Host, Timeout) ->
 
 listen_port_please(Name, Host) ->
     ?LOG_DEBUG("consulate:listen_port_please(~p, ~p)", [Name, Host]),
-    Port = case consulate_client:get_local_service(Name) of
+    Thang = try consulate_client:get_local_service(Name)
+            catch _:Reason -> 
+                    ?LOG_DEBUG("OH FOR FUCKS SAKE: ~p", [Reason]),
+                    error
+            end,
+    Port = case Thang of
                {ok, #{<<"Port">> := P}} -> P;
                error -> erl_epmd:listen_port_please(Name, Host)
            end,
